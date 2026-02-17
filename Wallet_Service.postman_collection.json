@@ -1,0 +1,195 @@
+{
+	"info": {
+		"_postman_id": "wallet-service-collection",
+		"name": "Wallet Service API",
+		"description": "Complete API collection for Wallet Service - Manage user wallets and transactions",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "wallet-service"
+	},
+	"item": [
+		{
+			"name": "Get Wallet Balance",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/wallet",
+					"host": ["{{base_url}}"],
+					"path": ["wallet"]
+				},
+				"description": "Get user's wallet balance. Creates wallet if it doesn't exist."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Transaction History",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/wallet/transactions?limit=20&offset=0",
+					"host": ["{{base_url}}"],
+					"path": ["wallet", "transactions"],
+					"query": [
+						{
+							"key": "limit",
+							"value": "20",
+							"description": "Number of transactions to return"
+						},
+						{
+							"key": "offset",
+							"value": "0",
+							"description": "Pagination offset"
+						},
+						{
+							"key": "type",
+							"value": "",
+							"description": "Filter by type: deposit, withdrawal, bet_placed, bet_won, bet_lost, refund, payment_credit",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Get wallet transaction history with pagination and optional type filter."
+			},
+			"response": []
+		},
+		{
+			"name": "Deposit Funds",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"amount\": 1000,\n  \"description\": \"Wallet deposit\",\n  \"referenceId\": \"REF-123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/wallet/deposit",
+					"host": ["{{base_url}}"],
+					"path": ["wallet", "deposit"]
+				},
+				"description": "Deposit funds to user's wallet. Amount must be positive."
+			},
+			"response": []
+		},
+		{
+			"name": "Withdraw Funds",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"amount\": 500,\n  \"description\": \"Wallet withdrawal\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/wallet/withdraw",
+					"host": ["{{base_url}}"],
+					"path": ["wallet", "withdraw"]
+				},
+				"description": "Withdraw funds from user's wallet. Checks for sufficient balance."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Transactions by Type",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/wallet/transactions?limit=10&offset=0&type=deposit",
+					"host": ["{{base_url}}"],
+					"path": ["wallet", "transactions"],
+					"query": [
+						{
+							"key": "limit",
+							"value": "10"
+						},
+						{
+							"key": "offset",
+							"value": "0"
+						},
+						{
+							"key": "type",
+							"value": "deposit",
+							"description": "Filter: deposit, withdrawal, bet_placed, bet_won, bet_lost, refund, payment_credit"
+						}
+					]
+				},
+				"description": "Get transactions filtered by type (deposit, withdrawal, bet_placed, etc.)"
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:4000/api",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string",
+			"description": "JWT token from /api/auth/signin"
+		}
+	]
+}

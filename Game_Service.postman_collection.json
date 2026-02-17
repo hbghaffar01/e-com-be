@@ -1,0 +1,223 @@
+{
+  "info": {
+    "name": "Game Service",
+    "description": "API collection for Game Service - Casino game management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Get All Games",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/games?limit=20&offset=0",
+          "host": ["{{base_url}}"],
+          "path": ["api", "games"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "20"
+            },
+            {
+              "key": "offset",
+              "value": "0"
+            },
+            {
+              "key": "category",
+              "value": "Slots",
+              "disabled": true
+            },
+            {
+              "key": "provider",
+              "value": "Pragmatic Play",
+              "disabled": true
+            },
+            {
+              "key": "is_hot",
+              "value": "true",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Get list of all active games with optional filters"
+      }
+    },
+    {
+      "name": "Get Single Game",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/games/:id",
+          "host": ["{{base_url}}"],
+          "path": ["api", "games", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "GAME-XXXXXXXXX"
+            }
+          ]
+        },
+        "description": "Get detailed information about a specific game"
+      }
+    },
+    {
+      "name": "Search Games",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/games/search?q=slot",
+          "host": ["{{base_url}}"],
+          "path": ["api", "games", "search"],
+          "query": [
+            {
+              "key": "q",
+              "value": "slot"
+            }
+          ]
+        },
+        "description": "Search games by name"
+      }
+    },
+    {
+      "name": "Get Categories",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/games/categories",
+          "host": ["{{base_url}}"],
+          "path": ["api", "games", "categories"]
+        },
+        "description": "Get all game categories with counts"
+      }
+    },
+    {
+      "name": "Get Providers",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/games/providers",
+          "host": ["{{base_url}}"],
+          "path": ["api", "games", "providers"]
+        },
+        "description": "Get all game providers with counts"
+      }
+    },
+    {
+      "name": "Get Hot Games",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/games/hot",
+          "host": ["{{base_url}}"],
+          "path": ["api", "games", "hot"]
+        },
+        "description": "Get all featured/hot games"
+      }
+    },
+    {
+      "name": "Create Game (Admin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Sweet Bonanza\",\n  \"provider\": \"Pragmatic Play\",\n  \"category\": \"Slots\",\n  \"image\": \"https://example.com/games/sweet-bonanza.jpg\",\n  \"game_url\": \"https://game-provider.com/play/sweet-bonanza\",\n  \"description\": \"A popular slot game with bonus features\",\n  \"min_bet\": 10.00,\n  \"max_bet\": 5000.00,\n  \"rating\": 4.5,\n  \"is_hot\": true,\n  \"bonus_multiplier\": 2.5,\n  \"metadata\": {\n    \"reels\": 6,\n    \"rows\": 5,\n    \"paylines\": 50\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/games",
+          "host": ["{{base_url}}"],
+          "path": ["api", "games"]
+        },
+        "description": "Create a new casino game (Admin only)"
+      }
+    },
+    {
+      "name": "Update Game (Admin)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"is_hot\": true,\n  \"rating\": 4.8,\n  \"status\": \"active\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/games/:id",
+          "host": ["{{base_url}}"],
+          "path": ["api", "games", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "GAME-XXXXXXXXX"
+            }
+          ]
+        },
+        "description": "Update game information (Admin only)"
+      }
+    },
+    {
+      "name": "Delete Game (Admin)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/games/:id",
+          "host": ["{{base_url}}"],
+          "path": ["api", "games", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "GAME-XXXXXXXXX"
+            }
+          ]
+        },
+        "description": "Delete a game (sets status to inactive) (Admin only)"
+      }
+    }
+  ]
+}

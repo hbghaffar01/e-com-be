@@ -1,0 +1,30 @@
+{
+  "name": "bazaarly-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "db:migrate": "node scripts/run-sql.js migrations",
+    "db:seed": "node scripts/run-sql.js seeds",
+    "docker-up": "docker compose -f docker-compose.pgadmin.yml up -d",
+    "docker-down": "docker compose -f docker-compose.pgadmin.yml down",
+    "docker-remove": "docker compose -f docker-compose.pgadmin.yml rm -f"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^7.0.12",
+    "pg": "^8.13.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

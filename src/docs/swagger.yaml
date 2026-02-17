@@ -1,0 +1,3006 @@
+# Swagger Documentation for Bazaarly API
+# This file contains detailed API documentation
+
+paths:
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user (sends OTP)
+      description: Creates a new user account and sends OTP to email for verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                username:
+                  type: string
+                  example: "johndoe"
+                password:
+                  type: string
+                  minLength: 6
+                  example: "password123"
+                phone:
+                  type: string
+                  example: "+92300123456"
+                role:
+                  type: string
+                  enum: [customer, merchant, corporate]
+                  default: customer
+                merchantCompanyName:
+                  type: string
+                  example: "My Store"
+                taxId:
+                  type: string
+                  example: "TAX123456"
+      responses:
+        '200':
+          description: OTP sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  email:
+                    type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/verify-otp:
+    post:
+      tags:
+        - Authentication
+      summary: Verify OTP and create user account
+      description: Verifies the OTP code and creates the user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - otp
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                otp:
+                  type: string
+                  pattern: '^[0-9]{6}$'
+                  example: "123456"
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid OTP or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/resend-otp:
+    post:
+      tags:
+        - Authentication
+      summary: Resend OTP code
+      description: Resends OTP code to user's email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+      responses:
+        '200':
+          description: OTP resent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/signin:
+    post:
+      tags:
+        - Authentication
+      summary: Login to account
+      description: Authenticate user with email/username and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - identifier
+                - password
+              properties:
+                identifier:
+                  type: string
+                  description: Email or username
+                  example: "john@example.com"
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Email not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user profile
+      description: Returns the authenticated user's profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /products:
+    get:
+      tags:
+        - Products
+      summary: Get all products
+      description: Retrieve all products with optional category filter
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: Filter by category name
+          example: "Electronics"
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+  /products/search:
+    get:
+      tags:
+        - Products
+      summary: Search products
+      description: Search products by name, brand, or category
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+          description: Search query
+          example: "iphone"
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+  /products/{id}:
+    get:
+      tags:
+        - Products
+      summary: Get product by ID
+      description: Retrieve a single product by its ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Product ID
+          example: "P-123"
+      responses:
+        '200':
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /cart:
+    get:
+      tags:
+        - Cart
+      summary: Get user's cart
+      description: Retrieve all items in the user's shopping cart
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cart items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CartItem'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - Cart
+      summary: Clear cart
+      description: Remove all items from the cart
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cart cleared
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CartItem'
+
+  /cart/add:
+    post:
+      tags:
+        - Cart
+      summary: Add item to cart
+      description: Add a product to the shopping cart
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+              properties:
+                id:
+                  type: string
+                  description: Product ID
+                name:
+                  type: string
+                price:
+                  type: number
+                image:
+                  type: string
+      responses:
+        '200':
+          description: Item added to cart
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CartItem'
+
+  /cart/{productId}:
+    patch:
+      tags:
+        - Cart
+      summary: Update cart item quantity
+      description: Update the quantity of an item in the cart
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: number
+                  minimum: 0
+      responses:
+        '200':
+          description: Cart updated
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CartItem'
+    delete:
+      tags:
+        - Cart
+      summary: Remove item from cart
+      description: Remove a specific item from the cart
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item removed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CartItem'
+
+  /orders:
+    get:
+      tags:
+        - Orders
+      summary: Get order history
+      description: Retrieve user's order history
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+    post:
+      tags:
+        - Orders
+      summary: Create new order
+      description: Place a new order
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - items
+                - total
+                - address
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CartItem'
+                total:
+                  type: number
+                address:
+                  type: string
+                paymentMethod:
+                  type: string
+                  example: "cod"
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+
+  /orders/{id}:
+    get:
+      tags:
+        - Orders
+      summary: Get order by ID
+      description: Retrieve a specific order by its ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wishlist:
+    get:
+      tags:
+        - Wishlist
+      summary: Get user's wishlist
+      description: Retrieve all products in the user's wishlist
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Wishlist items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+  /wishlist/{productId}:
+    post:
+      tags:
+        - Wishlist
+      summary: Add product to wishlist
+      description: Add a product to the user's wishlist
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product added to wishlist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+    delete:
+      tags:
+        - Wishlist
+      summary: Remove product from wishlist
+      description: Remove a product from the user's wishlist
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product removed from wishlist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /addresses:
+    get:
+      tags:
+        - Addresses
+      summary: Get user's addresses
+      description: Retrieve all saved addresses for the user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+    post:
+      tags:
+        - Addresses
+      summary: Add new address
+      description: Add a new address to the user's saved addresses
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Address'
+      responses:
+        '201':
+          description: Address added
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+
+  /addresses/{id}:
+    put:
+      tags:
+        - Addresses
+      summary: Update address
+      description: Update an existing address
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label:
+                  type: string
+                street:
+                  type: string
+                village:
+                  type: string
+                city:
+                  type: string
+                lat:
+                  type: number
+                lng:
+                  type: number
+                isDefault:
+                  type: boolean
+      responses:
+        '200':
+          description: Address updated
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+    delete:
+      tags:
+        - Addresses
+      summary: Delete address
+      description: Delete an address from user's saved addresses
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Address deleted
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+
+  /reviews/{productId}:
+    get:
+      tags:
+        - Reviews
+      summary: Get product reviews
+      description: Retrieve all reviews for a specific product
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+    post:
+      tags:
+        - Reviews
+      summary: Add/update product review
+      description: Submit or update a review for a product
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - rating
+              properties:
+                rating:
+                  type: number
+                  minimum: 1
+                  maximum: 5
+                  example: 5
+                comment:
+                  type: string
+                  example: "Great product!"
+      responses:
+        '201':
+          description: Review submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /merchant/{merchantId}/stats:
+    get:
+      tags:
+        - Merchant
+      summary: Get merchant dashboard stats
+      description: Retrieve statistics for merchant dashboard
+      parameters:
+        - in: path
+          name: merchantId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Merchant statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalSales:
+                    type: number
+                  ordersCount:
+                    type: number
+                  activeProducts:
+                    type: number
+                  visitorCount:
+                    type: number
+                  rating:
+                    type: number
+
+  /merchant/{merchantId}/profile:
+    get:
+      tags:
+        - Merchant
+      summary: Get merchant profile
+      description: Retrieve merchant profile information
+      parameters:
+        - in: path
+          name: merchantId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Merchant profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Merchant'
+    put:
+      tags:
+        - Merchant
+      summary: Update merchant profile
+      description: Update merchant profile information
+      parameters:
+        - in: path
+          name: merchantId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                companyName:
+                  type: string
+                ownerName:
+                  type: string
+                email:
+                  type: string
+                phone:
+                  type: string
+                taxId:
+                  type: string
+                description:
+                  type: string
+                storePolicy:
+                  type: string
+                location:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /merchant/{merchantId}/products:
+    get:
+      tags:
+        - Merchant
+      summary: Get merchant products
+      description: Retrieve all products for a merchant
+      parameters:
+        - in: path
+          name: merchantId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+    post:
+      tags:
+        - Merchant
+      summary: Add product to merchant inventory
+      description: Add a new product to merchant's inventory
+      parameters:
+        - in: path
+          name: merchantId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - brand
+                - price
+                - category
+              properties:
+                name:
+                  type: string
+                brand:
+                  type: string
+                price:
+                  type: number
+                oldPrice:
+                  type: number
+                images:
+                  type: array
+                  items:
+                    type: string
+                isExpress:
+                  type: boolean
+                category:
+                  type: string
+                subCategory:
+                  type: string
+                specs:
+                  type: object
+                madeIn:
+                  type: string
+                warrantyDetail:
+                  type: string
+                deliveryTime:
+                  type: string
+                deliveryArea:
+                  type: string
+      responses:
+        '201':
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+
+  /merchant/{merchantId}/promotions:
+    get:
+      tags:
+        - Merchant
+      summary: Get merchant promotions
+      description: Retrieve all promotions for a merchant
+      parameters:
+        - in: path
+          name: merchantId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of promotions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Promotion'
+    post:
+      tags:
+        - Merchant
+      summary: Create merchant promotion
+      description: Create a new promotion for the merchant
+      parameters:
+        - in: path
+          name: merchantId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - discountPercentage
+                - startDate
+                - endDate
+              properties:
+                name:
+                  type: string
+                discountPercentage:
+                  type: number
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                status:
+                  type: string
+                type:
+                  type: string
+                minPurchase:
+                  type: number
+      responses:
+        '201':
+          description: Promotion created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Promotion'
+
+  /promotions:
+    get:
+      tags:
+        - Promotions
+      summary: Get all active promotions
+      description: Retrieve all active promotions across the platform
+      responses:
+        '200':
+          description: List of promotions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Promotion'
+
+  /marketing/ad-inquiries:
+    get:
+      tags:
+        - Marketing
+      summary: Get advertising inquiries
+      description: Retrieve all advertising inquiries (Admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of inquiries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    companyName:
+                      type: string
+                    contactName:
+                      type: string
+                    email:
+                      type: string
+                    phone:
+                      type: string
+                    budget:
+                      type: string
+                    adType:
+                      type: string
+                    targetCategory:
+                      type: string
+                    status:
+                      type: string
+                    date:
+                      type: string
+    post:
+      tags:
+        - Marketing
+      summary: Submit advertising inquiry
+      description: Submit a new advertising inquiry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                companyName:
+                  type: string
+                contactName:
+                  type: string
+                email:
+                  type: string
+                phone:
+                  type: string
+                budget:
+                  type: string
+                adType:
+                  type: string
+                targetCategory:
+                  type: string
+      responses:
+        '201':
+          description: Inquiry submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  companyName:
+                    type: string
+                  contactName:
+                    type: string
+                  email:
+                    type: string
+                  phone:
+                    type: string
+                  budget:
+                    type: string
+                  adType:
+                    type: string
+                  targetCategory:
+                    type: string
+                  status:
+                    type: string
+                    default: "New"
+                  date:
+                    type: string
+
+  /categories:
+    get:
+      tags:
+        - Categories
+      summary: Get all categories
+      description: Retrieve all categories with their subcategories
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    sub_categories:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          name:
+                            type: string
+    post:
+      tags:
+        - Categories
+      summary: Create new category
+      description: Create a new product category (Admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: "Electronics"
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+
+  /categories/{id}:
+    get:
+      tags:
+        - Categories
+      summary: Get category by ID
+      description: Retrieve a single category with its subcategories
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Category details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  sub_categories:
+                    type: array
+    put:
+      tags:
+        - Categories
+      summary: Update category
+      description: Update a category (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Category updated
+    delete:
+      tags:
+        - Categories
+      summary: Delete category
+      description: Delete a category (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Category deleted
+
+  /uploads/single:
+    post:
+      tags:
+        - Uploads
+      summary: Upload single file
+      description: Upload a single file (profile, product image, etc.)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                uploadType:
+                  type: string
+                  enum: [profile, product, merchant, document]
+                  example: "product"
+                entityId:
+                  type: string
+                  example: "P-123"
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  url:
+                    type: string
+                  filename:
+                    type: string
+                  uploadType:
+                    type: string
+
+  /uploads/multiple:
+    post:
+      tags:
+        - Uploads
+      summary: Upload multiple files
+      description: Upload multiple files at once
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - files
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                uploadType:
+                  type: string
+                  enum: [profile, product, merchant, document]
+                entityId:
+                  type: string
+      responses:
+        '200':
+          description: Files uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    url:
+                      type: string
+
+  /uploads/user:
+    get:
+      tags:
+        - Uploads
+      summary: Get user's uploaded files
+      description: Retrieve all files uploaded by the authenticated user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: uploadType
+          schema:
+            type: string
+          description: Filter by upload type
+        - in: query
+          name: entityId
+          schema:
+            type: string
+          description: Filter by entity ID
+      responses:
+        '200':
+          description: List of uploaded files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    url:
+                      type: string
+                    filename:
+                      type: string
+                    uploadType:
+                      type: string
+
+  /uploads/{id}:
+    delete:
+      tags:
+        - Uploads
+      summary: Delete uploaded file
+      description: Delete an uploaded file
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File deleted
+
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: Get user notifications
+      description: Retrieve notifications for the authenticated user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+          description: Number of notifications to return
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+          description: Pagination offset
+        - in: query
+          name: unreadOnly
+          schema:
+            type: boolean
+            default: false
+          description: Get only unread notifications
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                        title:
+                          type: string
+                        message:
+                          type: string
+                        type:
+                          type: string
+                        is_read:
+                          type: boolean
+                        created_at:
+                          type: string
+                  unreadCount:
+                    type: number
+                  total:
+                    type: number
+    post:
+      tags:
+        - Notifications
+      summary: Create notification
+      description: Create a new notification (Admin/System only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - title
+                - message
+              properties:
+                user_id:
+                  type: string
+                title:
+                  type: string
+                message:
+                  type: string
+                type:
+                  type: string
+                  enum: [order, promotion, system, merchant]
+      responses:
+        '201':
+          description: Notification created
+
+  /notifications/{id}/read:
+    put:
+      tags:
+        - Notifications
+      summary: Mark notification as read
+      description: Mark a notification as read
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Notification marked as read
+
+  /notifications/mark-all-read:
+    put:
+      tags:
+        - Notifications
+      summary: Mark all notifications as read
+      description: Mark all user notifications as read
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: All notifications marked as read
+
+  /notifications/{id}:
+    delete:
+      tags:
+        - Notifications
+      summary: Delete notification
+      description: Delete a notification
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Notification deleted
+
+  /corporate/profile:
+    get:
+      tags:
+        - Corporate
+      summary: Get corporate profile
+      description: Retrieve corporate account profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Corporate profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  user_id:
+                    type: string
+                  companyName:
+                    type: string
+                  ntn:
+                    type: string
+                  strn:
+                    type: string
+                  businessType:
+                    type: string
+                  representativeName:
+                    type: string
+    put:
+      tags:
+        - Corporate
+      summary: Update corporate profile
+      description: Update corporate account profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                companyName:
+                  type: string
+                ntn:
+                  type: string
+                strn:
+                  type: string
+                businessType:
+                  type: string
+                representativeName:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated
+
+  /corporate/credit-info:
+    get:
+      tags:
+        - Corporate
+      summary: Get credit information
+      description: Get credit limit and usage for corporate account
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Credit information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  creditLimit:
+                    type: number
+                  usedCredit:
+                    type: number
+                  availableCredit:
+                    type: number
+
+  /corporate/quotes:
+    get:
+      tags:
+        - Corporate
+      summary: Get bulk quotes
+      description: Retrieve all bulk quote requests for corporate account
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of bulk quotes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    product_id:
+                      type: string
+                    quantity:
+                      type: number
+                    requested_price:
+                      type: number
+                    quoted_price:
+                      type: number
+                    status:
+                      type: string
+    post:
+      tags:
+        - Corporate
+      summary: Request bulk quote
+      description: Request a bulk quote for products
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+                - quantity
+              properties:
+                productId:
+                  type: string
+                quantity:
+                  type: number
+                requestedPrice:
+                  type: number
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Quote request created
+
+  /corporate/quotes/{id}:
+    put:
+      tags:
+        - Corporate
+      summary: Update bulk quote
+      description: Update a bulk quote request
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: number
+                requestedPrice:
+                  type: number
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Quote updated
+
+  /payments/methods:
+    get:
+      tags:
+        - Payments
+      summary: Get payment methods
+      description: Retrieve available payment methods
+      responses:
+        '200':
+          description: List of payment methods
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    type:
+                      type: string
+                    description:
+                      type: string
+                    fee:
+                      type: number
+                    available:
+                      type: boolean
+
+  /payments/create-intent:
+    post:
+      tags:
+        - Payments
+      summary: Create payment intent
+      description: Create a payment intent for an order
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - orderId
+                - amount
+                - paymentMethod
+              properties:
+                orderId:
+                  type: string
+                amount:
+                  type: number
+                paymentMethod:
+                  type: string
+                  example: "jazzcash"
+                currency:
+                  type: string
+                  default: "PKR"
+      responses:
+        '200':
+          description: Payment intent created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactionId:
+                    type: string
+                  paymentIntent:
+                    type: object
+
+  /payments/confirm:
+    post:
+      tags:
+        - Payments
+      summary: Confirm payment
+      description: Confirm payment completion
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - transactionId
+              properties:
+                transactionId:
+                  type: string
+                paymentData:
+                  type: object
+      responses:
+        '200':
+          description: Payment confirmed
+
+  /payments/transactions:
+    get:
+      tags:
+        - Payments
+      summary: Get payment transactions
+      description: Retrieve payment transaction history
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    order_id:
+                      type: string
+                    amount:
+                      type: number
+                    payment_status:
+                      type: string
+                    created_at:
+                      type: string
+
+  /payments/refund:
+    post:
+      tags:
+        - Payments
+      summary: Process refund
+      description: Process a refund for a transaction (Admin/Merchant only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - transactionId
+                - refundAmount
+              properties:
+                transactionId:
+                  type: string
+                refundAmount:
+                  type: number
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Refund processed
+
+  /wallet:
+    get:
+      tags:
+        - Wallet
+      summary: Get wallet balance
+      description: Get user's wallet balance. Creates wallet if it doesn't exist.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Wallet information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wallet/transactions:
+    get:
+      tags:
+        - Wallet
+      summary: Get transaction history
+      description: Retrieve wallet transaction history with pagination and optional type filter
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+          description: Number of transactions to return
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+          description: Pagination offset
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [deposit, withdrawal, bet_placed, bet_won, bet_lost, refund, payment_credit]
+          description: Filter transactions by type
+      responses:
+        '200':
+          description: Transaction history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WalletTransaction'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wallet/deposit:
+    post:
+      tags:
+        - Wallet
+      summary: Deposit funds
+      description: Deposit funds to user's wallet. Amount must be positive.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  type: number
+                  minimum: 0.01
+                  description: Amount to deposit (must be positive)
+                description:
+                  type: string
+                  description: Optional description
+                referenceId:
+                  type: string
+                  description: Optional reference ID (e.g., payment transaction ID)
+      responses:
+        '201':
+          description: Funds deposited successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  transactionId:
+                    type: string
+                  balanceBefore:
+                    type: number
+                  balanceAfter:
+                    type: number
+                  amount:
+                    type: number
+                  currentBalance:
+                    type: number
+        '400':
+          description: Invalid amount
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wallet/withdraw:
+    post:
+      tags:
+        - Wallet
+      summary: Withdraw funds
+      description: Withdraw funds from user's wallet. Checks for sufficient balance.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  type: number
+                  minimum: 0.01
+                  description: Amount to withdraw (must be positive)
+                description:
+                  type: string
+                  description: Optional description
+      responses:
+        '201':
+          description: Funds withdrawn successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  transactionId:
+                    type: string
+                  balanceBefore:
+                    type: number
+                  balanceAfter:
+                    type: number
+                  amount:
+                    type: number
+                  currentBalance:
+                    type: number
+        '400':
+          description: Invalid amount or insufficient funds
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games:
+    get:
+      tags:
+        - Games
+      summary: Get all games
+      description: Get list of casino games with optional filters (category, provider, status, is_hot)
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: "Filter by category (Slots, Live, Table, Originals, etc.)"
+        - in: query
+          name: provider
+          schema:
+            type: string
+          description: "Filter by provider (Pragmatic Play, Evolution, etc.)"
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - active
+              - inactive
+              - suspended
+          description: "Filter by status (default: active)"
+        - in: query
+          name: is_hot
+          schema:
+            type: boolean
+          description: Filter hot games
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+          description: Number of games to return
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+          description: Pagination offset
+      responses:
+        '200':
+          description: List of games
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  games:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Game'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+    post:
+      tags:
+        - Games
+      summary: Create game
+      description: Create a new casino game (Admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - provider
+                - category
+                - image
+                - game_url
+              properties:
+                name:
+                  type: string
+                provider:
+                  type: string
+                category:
+                  type: string
+                  description: Any category name (e.g., Slots, Live, Table, Dice, etc.)
+                image:
+                  type: string
+                game_url:
+                  type: string
+                description:
+                  type: string
+                min_bet:
+                  type: number
+                  default: 10
+                max_bet:
+                  type: number
+                  default: 10000
+                rating:
+                  type: number
+                  minimum: 0
+                  maximum: 5
+                is_hot:
+                  type: boolean
+                  default: false
+                bonus_multiplier:
+                  type: number
+                metadata:
+                  type: object
+      responses:
+        '201':
+          description: Game created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+        '400':
+          description: Invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games/{id}:
+    get:
+      tags:
+        - Games
+      summary: Get single game
+      description: Get detailed information about a specific game
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Game ID
+      responses:
+        '200':
+          description: Game details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags:
+        - Games
+      summary: Update game
+      description: Update game information (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                provider:
+                  type: string
+                category:
+                  type: string
+                image:
+                  type: string
+                game_url:
+                  type: string
+                description:
+                  type: string
+                min_bet:
+                  type: number
+                max_bet:
+                  type: number
+                rating:
+                  type: number
+                is_hot:
+                  type: boolean
+                bonus_multiplier:
+                  type: number
+                metadata:
+                  type: object
+                status:
+                  type: string
+                  enum: [active, inactive, suspended]
+      responses:
+        '200':
+          description: Game updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+        '403':
+          description: Admin access required
+        '404':
+          description: Game not found
+    delete:
+      tags:
+        - Games
+      summary: Delete game
+      description: Delete a game (sets status to inactive) (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Game deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  gameId:
+                    type: string
+        '403':
+          description: Admin access required
+        '404':
+          description: Game not found
+
+  /games/search:
+    get:
+      tags:
+        - Games
+      summary: Search games
+      description: Search games by name
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+          description: Search query
+      responses:
+        '200':
+          description: Matching games
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  games:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Game'
+                  total:
+                    type: integer
+
+  /games/categories:
+    get:
+      tags:
+        - Games
+      summary: Get game categories
+      description: Get all game categories with game counts
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    category:
+                      type: string
+                    count:
+                      type: integer
+
+  /games/providers:
+    get:
+      tags:
+        - Games
+      summary: Get game providers
+      description: Get all game providers with game counts
+      responses:
+        '200':
+          description: List of providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    provider:
+                      type: string
+                    count:
+                      type: integer
+
+  /games/hot:
+    get:
+      tags:
+        - Games
+      summary: Get hot games
+      description: Get all featured/hot games
+      responses:
+        '200':
+          description: List of hot games
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  games:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Game'
+                  total:
+                    type: integer
+
+  /admin/dashboard:
+    get:
+      tags:
+        - Admin
+      summary: Get admin dashboard stats
+      description: Retrieve statistics for admin dashboard
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalUsers:
+                    type: number
+                  totalOrders:
+                    type: number
+                  totalSales:
+                    type: number
+                  totalProducts:
+                    type: number
+                  totalMerchants:
+                    type: number
+
+  /admin/users:
+    get:
+      tags:
+        - Admin
+      summary: Get users list
+      description: Retrieve list of users with filtering (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: Number of users to return
+        - in: query
+          name: offset
+          schema:
+            type: integer
+          description: Pagination offset
+        - in: query
+          name: role
+          schema:
+            type: string
+          description: Filter by role
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search by name or email
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  /admin/users/{id}/status:
+    put:
+      tags:
+        - Admin
+      summary: Update user status
+      description: Update user account status (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [active, suspended, banned]
+      responses:
+        '200':
+          description: User status updated
+
+  /admin/merchants:
+    get:
+      tags:
+        - Admin
+      summary: Get merchants list
+      description: Retrieve list of all merchants (Admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of merchants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Merchant'
+
+  /admin/merchants/{id}/approve:
+    put:
+      tags:
+        - Admin
+      summary: Approve/reject merchant
+      description: Approve or reject a merchant application (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [Approved, Rejected]
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Merchant status updated
+
+  /admin/orders:
+    get:
+      tags:
+        - Admin
+      summary: Get all orders
+      description: Retrieve all orders for admin management (Admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+
+  /admin/orders/{id}/status:
+    put:
+      tags:
+        - Admin
+      summary: Update order status
+      description: Update order status (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [Processing, Shipped, Delivered, Cancelled]
+      responses:
+        '200':
+          description: Order status updated
+
+  /admin/analytics/sales:
+    get:
+      tags:
+        - Admin
+      summary: Get sales analytics
+      description: Retrieve sales analytics data (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+          description: Start date for analytics
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+          description: End date for analytics
+      responses:
+        '200':
+          description: Sales analytics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalSales:
+                    type: number
+                  totalOrders:
+                    type: number
+                  averageOrderValue:
+                    type: number
+                  salesByDate:
+                    type: array
+                    items:
+                      type: object
+
+  /auth/profile:
+    put:
+      tags:
+        - Authentication
+      summary: Update user profile
+      description: Update authenticated user's profile (name, phone, avatar)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                phone:
+                  type: string
+                avatar_url:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/change-password:
+    post:
+      tags:
+        - Authentication
+      summary: Change password
+      description: Change password for authenticated user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+                  minLength: 6
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/forgot-password:
+    post:
+      tags:
+        - Authentication
+      summary: Forgot password
+      description: Request a password reset token (sent via email)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Reset instructions sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Reset password
+      description: Reset password using reset token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - newPassword
+              properties:
+                token:
+                  type: string
+                newPassword:
+                  type: string
+                  minLength: 6
+      responses:
+        '200':
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          description: Invalid/expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /products/featured:
+    get:
+      tags:
+        - Products
+      summary: Get featured products
+      description: Get featured products (high ratings/popular)
+      responses:
+        '200':
+          description: List of featured products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+  /products/trending:
+    get:
+      tags:
+        - Products
+      summary: Get trending products
+      description: Get trending products (most viewed recently)
+      responses:
+        '200':
+          description: List of trending products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+  /products/recommendations/{userId}:
+    get:
+      tags:
+        - Products
+      summary: Get product recommendations
+      description: Get personalized recommendations for a user
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Recommended products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+  /products/{id}/view:
+    post:
+      tags:
+        - Products
+      summary: Track product view
+      description: Track a product view (analytics)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: View tracked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  views:
+                    type: number
+
+  /orders/{id}/cancel:
+    put:
+      tags:
+        - Orders
+      summary: Cancel order
+      description: Cancel an order (requires authentication)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Order cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  order:
+                    $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /orders/{id}/return:
+    post:
+      tags:
+        - Orders
+      summary: Request return
+      description: Request return for an order (requires authentication)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                items:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Return requested
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /orders/{id}/tracking:
+    get:
+      tags:
+        - Orders
+      summary: Get order tracking
+      description: Get detailed order tracking information
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tracking info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderId:
+                    type: string
+                  tracking:
+                    type: array
+                    items:
+                      type: object
+
+  /orders/{id}/feedback:
+    post:
+      tags:
+        - Orders
+      summary: Submit order feedback
+      description: Submit feedback for an order (requires authentication)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - rating
+              properties:
+                rating:
+                  type: number
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
+                deliveryRating:
+                  type: number
+                  minimum: 1
+                  maximum: 5
+                packagingRating:
+                  type: number
+                  minimum: 1
+                  maximum: 5
+      responses:
+        '201':
+          description: Feedback submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
