@@ -1,4 +1,4 @@
-# Bazaarly Backend API
+# Ecommerce Backend API
 
 Audience: Frontend developers integrating the Bazaarly UI with the backend services.
 
